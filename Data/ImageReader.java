@@ -1,12 +1,10 @@
-package MNIST;
+package Data;
 
 import java.io.*;
 
-import Networks.DataPoint;
+public class ImageReader {
 
-public class MnistReader {
-
-    public DataPoint[] readData(String imageFilePath, String labelFilePath) throws IOException {
+    public ImageDataPoint[] readData(String imageFilePath, String labelFilePath, int numCategories) throws IOException {
 
         // Images
         DataInputStream imageInputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(imageFilePath)));
@@ -29,15 +27,16 @@ public class MnistReader {
         System.out.println("number of labels is " + numberOfLabels);
 
         // Store data in dataPoints[]
-        DataPoint[] dataPoints = new DataPoint[numberOfImages];
+        ImageDataPoint[] dataPoints = new ImageDataPoint[numberOfImages];
 
         for (int i = 0; i < numberOfImages; i++) {
-            DataPoint point = new DataPoint(784, 10);
+            ImageDataPoint point = new ImageDataPoint(nCols, nRows, numCategories);
 
             int label = labelInputStream.readUnsignedByte();
             point.setOutput(label, 1);
 
-            for (int j = 0; j < 784; j++)
+            // Data is expected to be ints between 0 and 255 and is stored in doubles between 0 and 1
+            for (int j = 0; j < nCols * nRows; j++)
                 point.setInput(j, (double)imageInputStream.readUnsignedByte() / 255);
             
             dataPoints[i] = point;

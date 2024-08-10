@@ -1,45 +1,29 @@
-package MNIST;
-
-public class MnistVisualizer {
-    
-}
-
-/*
-package MNIST;
+package Data.MNIST;
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
 import javax.swing.*;
-import java.awt.geom.*;
 
-import java.util.ArrayList;
+import Data.DataPoint;
+import Data.ImageDataPoint;
+import Models.*;
+
 import java.util.Timer;
 import java.util.TimerTask;
-
-import Networks.*;
 
 public class MnistVisualizer extends JPanel {
     
     private int margin = 50;
-    private DataPoint dataPoint;
+    private ImageDataPoint dataPoint;
     private Timer timer;
     private TimerTask task;
-
-    private DataPoint[] testData;
-    private int[] guessedLabels;
-    private ArrayList<Integer> wrongGuessIndices;
-    private int currentViewIndex = 0;
 
     public MnistVisualizer() {
         timer = new Timer();
         addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent me) {
                 System.out.println("Mouse pressed: " + me);
-                setDataPoint(testData[wrongGuessIndices.get(++currentViewIndex)]);
-                if (currentViewIndex > wrongGuessIndices.size())
-                    currentViewIndex = 0;
                 
                 task = new TimerTask() {
                     public void run() {
@@ -49,6 +33,9 @@ public class MnistVisualizer extends JPanel {
                         double x = pointOnScreen.getX() - jFramePoint.getX();
                         double y = pointOnScreen.getY() - jFramePoint.getY();
                         System.out.println("Running timer task: x " + x + " y " + y);
+
+                        dataPoint.transformDrawingRandom();
+                        repaint();
                     }
                 };
                 timer.scheduleAtFixedRate(task, 0, 1000);
@@ -56,7 +43,7 @@ public class MnistVisualizer extends JPanel {
             }
             public void mouseReleased(MouseEvent me) {
                 System.out.println("Mouse released: " + me);
-                //task.cancel();
+                task.cancel();
             }
         });
     }
@@ -71,9 +58,12 @@ public class MnistVisualizer extends JPanel {
         int width = getWidth();
         int height = getHeight();
 
+        // Get array of pixels
+        double[] pixelArray = dataPoint.getInputs();
+
         // Draw pixels
-        int nRows = dataPoint.getNumberOfRows();
-        int nCols = dataPoint.getNumberOfColumns();
+        int nRows = 28;
+        int nCols = 28;
         int pixelSize = (Math.min(width, height) - margin * 2) / nRows;
         int imageSize = pixelSize * nRows;
         int xMargin = (width - imageSize) / 2;
@@ -81,7 +71,7 @@ public class MnistVisualizer extends JPanel {
 
         for (int row = 0; row < nRows; row++) {
             for (int col = 0; col < nCols; col++) {
-                int brightness = (int)(dataPoint.getValue(row, col) * 255);
+                int brightness = (int)(pixelArray[row * nRows + col] * 255);
                 g.setColor(new Color(brightness, brightness, brightness));
 
                 int x = xMargin + pixelSize * col;
@@ -105,12 +95,20 @@ public class MnistVisualizer extends JPanel {
 
         // Draw label for current number
         FontMetrics metrics = g.getFontMetrics(getFont());
-        String label = Integer.toString(dataPoint.getLabel());
+        String label = Integer.toString(getLabel(dataPoint));
         int x = width / 2 - metrics.stringWidth(label) / 2;
         int y = yMargin / 2 + metrics.getAscent() / 2;
 
         g.setColor(Color.BLACK);
         graph.drawString(label, x, y);
+    }
+
+    public int getLabel(DataPoint point) {
+        double[] outputs = point.getOutputs();
+        int label = 0;
+        for (int i = 1; i < outputs.length; i++)
+            label = (outputs[i] > outputs[label]) ? i : label; 
+        return label;
     }
 
     public int getMargin() {
@@ -121,12 +119,11 @@ public class MnistVisualizer extends JPanel {
         this.margin = margin;
     }
 
-    public MnistDataPoint getDataPoint() {
+    public DataPoint getDataPoint() {
         return dataPoint;
     }
     
-    public void setDataPoint(MnistDataPoint dataPoint) {
+    public void setDataPoint(ImageDataPoint dataPoint) {
         this.dataPoint = dataPoint;
     }
 }
-*/

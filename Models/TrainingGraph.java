@@ -1,11 +1,13 @@
-package Networks;
+package Models;
 
 import java.awt.*;
-import javax.swing.*;
 import java.awt.geom.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import javax.swing.JPanel;
 
-public class NetworkTrainingGraph extends JPanel {
+public class TrainingGraph extends JPanel {
     
     // String labels
     private String title;
@@ -23,12 +25,13 @@ public class NetworkTrainingGraph extends JPanel {
     private double yLabelInterval;
     
     // Data
-    private ArrayList<Double> dataPoints;
+    private List<Point2D.Double> points;
     private double maxHeight;
+    private double maxWidth;
 
     // Constructor
-    public NetworkTrainingGraph(String title, String xAxisLabel, String yAxisLabel, int margin, int radius,
-                              int tickLength, int xLabelInterval, double yLabelInterval) {
+    public TrainingGraph(String title, String xAxisLabel, String yAxisLabel, int margin, int radius,
+                              int tickLength, int xLabelInterval, double yLabelInterval, double maxWidth, double maxHeight) {
         this.title = title;
         this.xAxisLabel = xAxisLabel;
         this.yAxisLabel = yAxisLabel;
@@ -37,13 +40,23 @@ public class NetworkTrainingGraph extends JPanel {
         this.tickLength = tickLength;
         this.xLabelInterval = xLabelInterval;
         this.yLabelInterval = yLabelInterval;
-        
-        dataPoints = new ArrayList<Double>();
-        maxHeight = 0;
+        this.maxWidth = maxWidth;
+        this.maxHeight = maxHeight;
+
+        points = new ArrayList<Point2D.Double>();
+    }
+
+    // Constructor without maxWidth or maxHeight
+    public TrainingGraph(String title, String xAxisLabel, String yAxisLabel, int margin, int radius,
+                              int tickLength, int xLabelInterval, double yLabelInterval) {
+        this(title, xAxisLabel, yAxisLabel, margin, radius, tickLength, xLabelInterval, yLabelInterval, 0, 0);
     }
 
     // Draw function
     protected void paintComponent(Graphics g) {
+
+        // Initialize local variables to be reused
+        double x, y;
 
         super.paintComponent(g);
         Graphics2D graph = (Graphics2D)g;
@@ -67,8 +80,8 @@ public class NetworkTrainingGraph extends JPanel {
 
         // Y axis label
         g.setFont(rotatedFont);
-        double x = margin / 3 + metrics.getAscent() / 2;
-        double y = height / 2 + metrics.stringWidth(yAxisLabel) / 2;
+        x = margin / 3 + metrics.getAscent() / 2;
+        y = height / 2 + metrics.stringWidth(yAxisLabel) / 2;
         graph.drawString(yAxisLabel, (float)x, (float)y); 
         g.setFont(defaultFont);
 
@@ -84,8 +97,8 @@ public class NetworkTrainingGraph extends JPanel {
         
 
         // X axis ticks
-        int numXLabels = (dataPoints.size() - 1) / xLabelInterval;
-        double xLabelScale = (double)(width - 2 * margin) / (dataPoints.size() - 1);
+        int numXLabels = (points.size() - 1) / xLabelInterval;
+        double xLabelScale = (double)(width - 2 * margin) / (points.size() - 1);
         for (int i = 0; i <= numXLabels; i++) {
             x = margin + i * xLabelScale * xLabelInterval;
             y = height - margin;
@@ -112,25 +125,30 @@ public class NetworkTrainingGraph extends JPanel {
         }
         
         // Find distance between points and vertical scale
-        double horizontalScale = (double)(width - 2 * margin) / (dataPoints.size() - 1);
+        double horizontalScale = (double)(width - 2 * margin) / (points.size() - 1);
         double verticalScale = (double)(height - 2 * margin) / maxHeight;
 
         //set color for points
         graph.setPaint(Color.RED);
 
-        // Draw data
-        for (int i = 0; i < dataPoints.size() - 1; i++) {
-            double x1 = margin + i * horizontalScale;
-            double y1 = height - margin - dataPoints.get(i) * verticalScale;
-            double x2 = margin + (i + 1) * horizontalScale;
-            double y2 = height - margin - dataPoints.get(i + 1) * verticalScale;
-            graph.fill(new Ellipse2D.Double(x1 - radius, y1 - radius, radius * 2, radius * 2));
-            graph.draw(new Line2D.Double(x1, y1, x2, y2));
+        if (points.size() > 0) {
+
+            // Draw data
+            for (int i = 0; i < points.size() - 1; i++) {
+                // Draw line between adjacent points
+                double x1 = margin + points.get(i).getX() * horizontalScale;
+                double y1 = height - margin - points.get(i).getY() * verticalScale;
+                double x2 = margin + points.get(i + 1).getX() * horizontalScale;
+                double y2 = height - margin - points.get(i + 1).getY() * verticalScale;
+                graph.fill(new Ellipse2D.Double(x1 - radius, y1 - radius, radius * 2, radius * 2));
+                graph.draw(new Line2D.Double(x1, y1, x2, y2));
+            }
+
+            // Final point
+            x = margin + points.get(points.size() - 1).getX() * horizontalScale;
+            y = height - margin - points.get(points.size() - 1).getY() * verticalScale;
+            graph.fill(new Ellipse2D.Double(x - radius, y - radius, radius * 2, radius * 2));
         }
-        // Final point
-        x = margin + (dataPoints.size() - 1) * horizontalScale;
-        y = height - margin - dataPoints.get(dataPoints.size() - 1) * verticalScale;
-        graph.fill(new Ellipse2D.Double(x - radius, y - radius, radius * 2, radius * 2));
     }
 
     // Getters and Setters
@@ -198,13 +216,32 @@ public class NetworkTrainingGraph extends JPanel {
         this.yLabelInterval = yLabelInterval;
     }
 
-    public ArrayList<Double> getDataPoints() {
-        return dataPoints;
+    public List<Point2D.Double> getPoints() {
+        return points;
     }
 
-    public void addDataPoint(double point) {
-        dataPoints.add(point);
-        maxHeight = (point > maxHeight) ? point : maxHeight;
+    public void addPoint(double x, double y) {
+        // Adjust max width and max height accordingly
+        maxWidth = Math.max(maxWidth, x);
+        maxHeight = Math.max(maxHeight, y);
+
+        // Add to points list
+        Point2D.Double point = new Point2D.Double(x, y);
+        points.add(point);
+
+        // Sort points by x coordinates to ensure lines match up correctly
+        points.sort(Comparator.comparingDouble(Point2D::getX));
+
+        // Repaint and update graph
+        repaint();
+    }
+
+    public double getMaxWidth() {
+        return maxWidth;
+    }
+
+    public void setMaxWidth(double maxWidth) {
+        this.maxWidth = maxWidth;
     }
 
     public double getMaxHeight() {

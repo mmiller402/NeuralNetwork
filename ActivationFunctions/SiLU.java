@@ -2,11 +2,12 @@ package ActivationFunctions;
 
 public class SiLU extends ActivationFunction {
     public double f(double x) {
-        return x / (1 + Math.exp(-x));
+        double sigmoid = 1 / (1 + Math.exp(-x));
+        return x * sigmoid;
     }
 
     public double df(double x) {
-        double sig = 1 / (1 + Math.exp(-x));
-        return sig * (1 + x * (1 - sig));
+        double sigmoid = 1 / (1 + Math.exp(-x));
+        return sigmoid + x * sigmoid * (1 - sigmoid);
     }
 }

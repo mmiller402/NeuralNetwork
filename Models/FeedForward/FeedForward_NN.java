@@ -1,12 +1,10 @@
-package Networks.FeedForward;
-
-import Networks.*;
-
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+package Models.FeedForward;
 
 import ActivationFunctions.*;
 import CostFunctions.*;
+
+import java.util.Arrays;
+import java.util.Random;
 
 public class FeedForward_NN {
     
@@ -22,10 +20,8 @@ public class FeedForward_NN {
     private double[][] outputs;
     private double[][] biases;
     private double[][] gradientB;
-    private double[][] velocityB;
     private double[][][] weights;
     private double[][][] gradientW;
-    private double[][][] velocityW;
 
     // valuesErr[i][j] = value of error of node j in layer i + 1
     //  (i must be less than the max number of layers)
@@ -36,19 +32,23 @@ public class FeedForward_NN {
 
     private CostFunction costFunction;
 
-    private double learningRateMin;
-    private double learningRateMax;
-    private double momentumCoefficient;
-    private double weightDecay;
-    private int warmRestartInterval;
-    private int warmRestartIntervalMult;
+    private double learningRate;
+    private double regularization;
 
-    private double averageError;
-    private int tempIterations; // Counts every iteration of forward propagation and resets when weights and biases are updated
-    private int numEpochs;
+    // ADAM parameters
+    private double beta1; // First moment decay
+    private double beta2; // Second moment decay
+    private final double epsilon = 1e-8; // Tiny value to avoid division by 0
+    private double[][][] mW; // First moment for weights
+    private double[][][] vW; // Second moment for weights
+    private double[][] mB; // First moment for biases
+    private double[][] vB; // Second moment for biases
+
+    // Random number generator
+    private Random rnd;
 
     public FeedForward_NN(int[] dimensions, CostFunction costFunction, ActivationFunction hiddenActivation, ActivationFunction outputActivation, 
-                 double learningRateMin, double learningRateMax, double momentumCoefficient, double weightDecay, int warmRestartInterval, int warmRestartIntervalMult) {
+                          double learningRate, double regularization, double beta1, double beta2) {
 
         // Initialize values array dimensions
         values = new double[dimensions.length][];
@@ -61,13 +61,16 @@ public class FeedForward_NN {
         // Initialize biases array dimensions
         biases = new double[dimensions.length - 1][];
         gradientB = new double[dimensions.length - 1][];
-        velocityB = new double[dimensions.length - 1][];
+        mB = new double[dimensions.length - 1][];
+        vB = new double[dimensions.length - 1][];
+        
 
         valuesErr = new double [dimensions.length - 1][];
         for (int i = 0; i < dimensions.length - 1; i++) {
             biases[i] = new double[dimensions[i + 1]];
             gradientB[i] = new double[dimensions[i + 1]];
-            velocityB[i] = new double[dimensions[i + 1]];
+            mB[i] = new double[dimensions[i + 1]];
+            vB[i] = new double[dimensions[i + 1]];
 
             valuesErr[i] = new double[dimensions[i + 1]];
         }
@@ -75,15 +78,18 @@ public class FeedForward_NN {
         // Initialize weights array dimensions
         weights = new double[dimensions.length - 1][][];
         gradientW = new double[dimensions.length - 1][][];
-        velocityW = new double[dimensions.length - 1][][];
+        mW = new double[dimensions.length - 1][][];
+        vW = new double[dimensions.length - 1][][];
         for (int i = 0; i < dimensions.length - 1; i++) {
             weights[i] = new double[dimensions[i]][];
             gradientW[i] = new double[dimensions[i]][];
-            velocityW[i] = new double[dimensions[i]][];
+            mW[i] = new double[dimensions[i]][];
+            vW[i] = new double[dimensions[i]][];
             for (int j = 0; j < dimensions[i]; j++) {
                 weights[i][j] = new double[dimensions[i + 1]];
                 gradientW[i][j] = new double[dimensions[i + 1]];
-                velocityW[i][j] = new double[dimensions[i + 1]];
+                mW[i][j] = new double[dimensions[i + 1]];
+                vW[i][j] = new double[dimensions[i + 1]];
             }
         }
 
@@ -93,13 +99,17 @@ public class FeedForward_NN {
         this.hiddenActivation = hiddenActivation;
         this.outputActivation = outputActivation;
 
-        this.learningRateMin = learningRateMin;
-        this.learningRateMax = learningRateMax;
-        this.momentumCoefficient = momentumCoefficient;
-        this.weightDecay = weightDecay;
+        this.learningRate = learningRate;
+        this.regularization = regularization;
 
-        this.warmRestartInterval = warmRestartInterval;
-        this.warmRestartIntervalMult = warmRestartIntervalMult;
+        this.beta1 = beta1;
+        this.beta2 = beta2;
+
+        // Create random number generator
+        rnd = new Random();
+
+        // Randomize weights to start
+        randomizeWeights();
     }
 
     public FeedForward_NN(FeedForward_Settings settings) {
@@ -107,40 +117,25 @@ public class FeedForward_NN {
              settings.getCostFunction(),
              settings.getHiddenActivation(),
              settings.getOutputActivation(),
-             settings.getLearningRateMin(),
-             settings.getLearningRateMax(),
-             settings.getMomentumCoefficient(),
-             settings.getWeightDecay(),
-             settings.getWarmRestartInterval(),
-             settings.getWarmRestartIntervalMult());
+             settings.getLearningRate(),
+             settings.getRegularization(),
+             settings.getBeta1(),
+             settings.getBeta2());
     }
 
+    // Call when initializing model
     public void randomizeWeights() {
         // Fill up weights in a normal distribution
         for (int i = 0; i < weights.length; i++) {
             for (int j = 0; j < weights[i].length; j++) {
                 for (int k = 0; k < weights[i][j].length; k++) {
-                    weights[i][j][k] = randomInNormalDistribution(0, 1) / Math.sqrt(weights[i].length);
+                    weights[i][j][k] = rnd.nextGaussian() * Math.sqrt(2.0 / (values[i].length + values[i + 1].length));
                 }
             }
         }
     }
 
-    double randomInNormalDistribution(double mean, double standardDeviation) {
-        double x1 = 1 - Math.random();
-        double x2 = 1 - Math.random();
-
-        double y1 = Math.sqrt(-2.0 * Math.log(x1)) * Math.cos(2.0 * Math.PI * x2);
-        return y1 * standardDeviation + mean;
-    }
-
-    public double[] updateGradients(double[] inputs, double[] expectedOutputs) {
-        double[] returnArray = forwardPropagate(inputs);
-        backPropagate(expectedOutputs);
-        resetValues();
-        return returnArray;
-    }
-
+    // Forward propagate given inputs and return a set of outputs
     public double[] forwardPropagate(double[] inputs) {
 
         // Reset values array
@@ -176,25 +171,18 @@ public class FeedForward_NN {
         return returnArray;
     }
 
-    public double backPropagate(double[] expectedOutputs) {
+    // Back propagate after a forward iteration
+    public void backPropagate(double[] expectedOutputs) {
 
         // Reset error array
         resetError();
         
-        // Find error value
-        double error = costFunction.cost(expectedOutputs, outputs[outputs.length - 1]);
-        if (Double.isNaN(error)) {
-            System.out.println("Oops");
-        }
-
-        averageError += error;
-
         // Backtrack through layers to get each node's errors and update weights and biases
         // Output layer
         int finalLayer = outputs.length - 1;
-        valuesErr[finalLayer - 1] = outputActivation.dfArray(values[finalLayer]);
+        double[] outputActivationDerivative = outputActivation.dfArray(values[finalLayer]);
         for (int node = 0; node < outputs[finalLayer].length; node++) {
-            valuesErr[finalLayer - 1][node] *= costFunction.dcost(expectedOutputs[node], outputs[finalLayer][node]);
+            valuesErr[finalLayer - 1][node] = outputActivationDerivative[node] * costFunction.dcost(expectedOutputs[node], outputs[finalLayer][node]);
         }
 
         // Hidden layers
@@ -209,7 +197,6 @@ public class FeedForward_NN {
 
                     // Update weights
                     double d = valuesErr[endLayer - 1][endNode] * outputs[startLayer][startNode];
-                    //System.out.print(d + " ");
                     gradientW[startLayer][startNode][endNode] += d;
                 }
                 valuesErr[startLayer - 1][startNode] *= activationDerivative[startNode];
@@ -226,7 +213,6 @@ public class FeedForward_NN {
             for (int endNode = 0; endNode < values[1].length; endNode++) {
                 // Update weights
                 double d = valuesErr[0][endNode] * outputs[0][startNode];
-                //System.out.print(d + " ");
                 gradientW[0][startNode][endNode] += d;
             }
         }
@@ -235,11 +221,6 @@ public class FeedForward_NN {
         for (int endNode = 0; endNode < values[1].length; endNode++) {
             gradientB[0][endNode] += valuesErr[0][endNode];
         }
-
-        tempIterations++;
-
-        // Return error
-        return error;
     }
 
     // Called before forward propagation
@@ -260,69 +241,63 @@ public class FeedForward_NN {
         }
     }
 
-    // Returns average error over this generation
-    public double updateWeightsAndBiases() {
-        // Calculate the alpha for this update
-        double alpha = learningRateMin + (learningRateMax - learningRateMin) / 2 * (1 + Math.cos((numEpochs % warmRestartInterval) / warmRestartInterval * Math.PI));
+    // Update weights and biases
+    public void updateWeightsAndBiases(int numBatches, int batchSize, int epoch) {
 
+        // Adjust learning rate
+        double alpha = learningRate / Math.sqrt(epoch);
+
+        // Weight decay to keep from large weight values
+        double weightDecay = 1 - regularization * alpha;
+        
+        // Adam updates
         for (int i = 0; i < weights.length; i++) {
             for (int j = 0; j < weights[i].length; j++) {
                 for (int k = 0; k < weights[i][j].length; k++) {
-                    double velocity = velocityW[i][j][k] * momentumCoefficient - gradientW[i][j][k] / tempIterations * alpha;
-                    velocityW[i][j][k] = velocity;
-                    weights[i][j][k] += velocity + weights[i][j][k] * alpha * weightDecay;
+                    // Update the first moment estimate
+                    mW[i][j][k] = beta1 * mW[i][j][k] + (1 - beta1) * gradientW[i][j][k] / batchSize;
+    
+                    // Update the second moment estimate
+                    vW[i][j][k] = beta2 * vW[i][j][k] + (1 - beta2) * (gradientW[i][j][k] / batchSize) * (gradientW[i][j][k] / batchSize);
+    
+                    // Compute bias-corrected estimates
+                    double mW_hat = mW[i][j][k] / (1 - Math.pow(beta1, numBatches));
+                    double vW_hat = vW[i][j][k] / (1 - Math.pow(beta2, numBatches));
+    
+                    // Update weights
+                    weights[i][j][k] = weights[i][j][k] * weightDecay - alpha * mW_hat / (Math.sqrt(vW_hat) + epsilon);
+    
+                    // Reset gradient
                     gradientW[i][j][k] = 0;
                 }
             }
         }
-
+    
+        // Update biases
         for (int i = 0; i < biases.length; i++) {
             for (int j = 0; j < biases[i].length; j++) {
-                double velocity = velocityB[i][j] * momentumCoefficient - gradientB[i][j] / tempIterations * alpha;
-                velocityB[i][j] = velocity;
-                biases[i][j] += velocity;
+                // Update the first moment estimate
+                mB[i][j] = beta1 * mB[i][j] + (1 - beta1) * gradientB[i][j] / batchSize;
+    
+                // Update the second moment estimate
+                vB[i][j] = beta2 * vB[i][j] + (1 - beta2) * (gradientB[i][j] / batchSize) * (gradientB[i][j] / batchSize);
+    
+                // Compute bias-corrected estimates
+                double mB_hat = mB[i][j] / (1 - Math.pow(beta1, numBatches));
+                double vB_hat = vB[i][j] / (1 - Math.pow(beta2, numBatches));
+    
+                // Update biases
+                biases[i][j] += -alpha * mB_hat / (Math.sqrt(vB_hat) + epsilon);
+    
+                // Reset gradient
                 gradientB[i][j] = 0;
             }
         }
-
-        numEpochs++;
-        if (numEpochs % warmRestartInterval == 0)
-            warmRestartInterval *= warmRestartIntervalMult;
-
-        // Average error
-        averageError /= tempIterations;
-        double tempError = averageError;
-        averageError = 0;
-        tempIterations = 0;
-        return tempError;
     }
 
-    // Conduct all forward and backward propagations allowed by train data then return the accuracy on the test data
-    public void learn(DataPoint[] trainData, int batchSize, int numIterations, NetworkTrainingGraph graph) {
-
-        // Get JFrame that graph is attached to
-        JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(graph);
-
-        // Loop through all data points numIterations number of times
-        for (int iteration = 0; iteration < numIterations; iteration++) {
-
-            // Loop through all data points
-            for (int pointIndex = 0; pointIndex < trainData.length; pointIndex++) {
-
-                // Feed data forward and backward
-                forwardPropagate(trainData[pointIndex].getInputs());
-                backPropagate(trainData[pointIndex].getOutputs());
-
-                // Update after every batch
-                if (pointIndex % batchSize == 0) {
-                    double averageError = updateWeightsAndBiases();
-
-                    System.out.println("Count: " + (pointIndex + iteration * trainData.length) + " | Average Error: " + averageError);
-                    graph.addDataPoint(averageError);
-                    frame.repaint();
-                }
-            }
-        }
+    // Get current cost of model, given a set of expected outputs
+    public double getCost(double[] expectedOutputs) {
+        return costFunction.cost(expectedOutputs, outputs[outputs.length - 1]);
     }
 
     @Override

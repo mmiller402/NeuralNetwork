@@ -1,9 +1,13 @@
-package Networks;
+package Data;
 
 public class DataPoint {
     
     private double[] inputs;
     private double[] outputs;
+
+    public DataPoint() {
+        this(0, 0);
+    }
 
     public DataPoint(double[] inputs, double[] outputs) {
         setInputs(inputs);
