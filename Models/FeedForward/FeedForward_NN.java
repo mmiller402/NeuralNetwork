@@ -37,6 +37,9 @@ public class FeedForward_NN {
     // L2 regularization parameter lambda
     private double lambda;
 
+    // Proportion of hidden layer nodes that are set to 0
+    private double dropoutRate;
+
     // ADAM parameters
     private double beta1; // First moment decay
     private double beta2; // Second moment decay
@@ -50,7 +53,7 @@ public class FeedForward_NN {
     private Random rnd;
 
     public FeedForward_NN(int[] dimensions, CostFunction costFunction, ActivationFunction hiddenActivation, ActivationFunction outputActivation, 
-                          double learningRate, double regularization, double beta1, double beta2) {
+                          double learningRate, double lambda, double dropoutRate, double beta1, double beta2) {
 
         // Initialize values array dimensions
         values = new double[dimensions.length][];
@@ -102,7 +105,8 @@ public class FeedForward_NN {
         this.outputActivation = outputActivation;
 
         this.learningRate = learningRate;
-        this.lambda = regularization;
+        this.lambda = lambda;
+        this.dropoutRate = dropoutRate;
 
         this.beta1 = beta1;
         this.beta2 = beta2;
@@ -112,17 +116,6 @@ public class FeedForward_NN {
 
         // Randomize weights to start
         randomizeWeights();
-    }
-
-    public FeedForward_NN(FeedForward_Settings settings) {
-        this(settings.getDimensions(),
-             settings.getCostFunction(),
-             settings.getHiddenActivation(),
-             settings.getOutputActivation(),
-             settings.getLearningRate(),
-             settings.getLambda(),
-             settings.getBeta1(),
-             settings.getBeta2());
     }
 
     // Call when initializing model
@@ -138,7 +131,7 @@ public class FeedForward_NN {
     }
 
     // Forward propagate given inputs and return a set of outputs
-    public double[] forwardPropagate(double[] inputs) {
+    public double[] forwardPropagate(double[] inputs, boolean training) {
 
         // Reset values array
         resetValues();
@@ -156,13 +149,36 @@ public class FeedForward_NN {
             // Loop through end node in the outer loop to add bias at the end
             for (int endNode = 0; endNode < values[endLayer].length; endNode++) {
                 for (int startNode = 0; startNode < values[startLayer].length; startNode++) {
-                    values[endLayer][endNode] += values[startLayer][startNode] * weights[startLayer][startNode][endNode];
+
+                    // Reduce weights when not training due to dropout
+                    double weight = weights[startLayer][startNode][endNode];
+                    if (!training)
+                        weight *= (1 - dropoutRate);
+
+                    values[endLayer][endNode] += values[startLayer][startNode] * weight;
                 }
                 values[endLayer][endNode] += biases[startLayer][endNode];
             }
 
-            // Apply activation function
-            outputs[endLayer] = (endLayer < values.length - 1) ? hiddenActivation.fArray(values[endLayer]) : outputActivation.fArray(values[endLayer]);
+            if (endLayer < values.length - 1) {
+                // Apply activation function
+                outputs[endLayer] = hiddenActivation.fArray(values[endLayer]);
+
+                // Apply dropout in hidden layers
+                if (training) {
+                    for (int node = 0; node < outputs[endLayer].length; node++) {
+                        if (Math.random() < dropoutRate) {
+                            values[endLayer][node] = 0;
+                            outputs[endLayer][node] = 0;
+                        }
+                    }
+                }
+            } 
+            else {
+                // Apply output activation function with no dropout
+                outputs[endLayer] = outputActivation.fArray(values[endLayer]);
+            }
+           
         }
 
         // Return array of outputs

@@ -45,7 +45,7 @@ public class Main {
 
         // Train network
         int batchSize = 100;
-        int numIterations = 4;
+        int numIterations = 2;
         trainer.train(trainData, batchSize, numIterations);
 
         // Test network
@@ -58,7 +58,7 @@ public class Main {
             double[] inputs = testData[i].getInputs();
             double[] outputs = testData[i].getOutputs();
 
-            double[] calculatedOutputs = model.forwardPropagate(inputs);
+            double[] calculatedOutputs = model.forwardPropagate(inputs, false);
 
             int maxIndex = 0;
             int label = 0;
@@ -107,15 +107,17 @@ public class Main {
 
     public static FeedForward_NN createModel() {
 
-        FeedForward_Settings settings = new FeedForward_Settings();
-        settings.setDimensions(new int[] {784, 200, 10});
-        settings.setCostFunction(new CrossEntropy());
-        settings.setActivations(new LeakyReLU(), new Softmax());
-        settings.setLearningRate(0.0005);
-        settings.setLambda(0.01);
-        settings.setBeta(0.9, 0.999);
+        int[] dimensions = new int[] {784, 200, 50, 10};
+        CostFunction costFunction = new CrossEntropy();
+        ActivationFunction hiddenActivation = new LeakyReLU();
+        ActivationFunction outputActivation = new Softmax();
+        double learningRate = 0.001;
+        double lambda = 0.01;
+        double dropoutRate = 0.2;
+        double beta1 = 0.9;
+        double beta2 = 0.999;
 
-        FeedForward_NN model = new FeedForward_NN(settings);
+        FeedForward_NN model = new FeedForward_NN(dimensions, costFunction, hiddenActivation, outputActivation, learningRate, lambda, dropoutRate, beta1, beta2);
         model.randomizeWeights();
 
         return model;

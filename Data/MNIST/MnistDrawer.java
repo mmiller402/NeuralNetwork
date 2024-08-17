@@ -125,7 +125,7 @@ public class MnistDrawer extends JPanel {
         }
 
         // Draw model predictions on the left
-        double[] modelPredictions = model.forwardPropagate(pixelArray);
+        double[] modelPredictions = model.forwardPropagate(pixelArray, false);
 
         FontMetrics metrics = g.getFontMetrics(getFont());
         double stringHeight = metrics.getAscent();

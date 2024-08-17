@@ -70,7 +70,7 @@ public class ModelTrainer {
                     
                     // Forward and back propagate data
                     double[] expectedOutputs = point.getOutputs();
-                    double[] outputs = model.forwardPropagate(point.getInputs());
+                    double[] outputs = model.forwardPropagate(point.getInputs(), true);
                     model.backPropagate(expectedOutputs);
 
                     // Update previous cost history
