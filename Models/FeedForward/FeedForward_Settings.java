@@ -12,7 +12,7 @@ public class FeedForward_Settings {
 
     private double learningRate;
 
-    private double regularization;
+    private double lambda;
 
     private double beta1, beta2;
 
@@ -53,12 +53,12 @@ public class FeedForward_Settings {
         this.learningRate = learningRate;
     }
 
-    public double getRegularization() {
-        return regularization;
+    public double getLambda() {
+        return lambda;
     }
 
-    public void setRegularization(double regularization) {
-        this.regularization = regularization;
+    public void setLambda(double lambda) {
+        this.lambda = lambda;
     }
 
     public double getBeta1() {

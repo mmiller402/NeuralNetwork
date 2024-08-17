@@ -23,9 +23,9 @@ public class FeedForward_NN {
     private double[][][] weights;
     private double[][][] gradientW;
 
-    // valuesErr[i][j] = value of error of node j in layer i + 1
+    // nodeError[i][j] = value of error of node j in layer i + 1
     //  (i must be less than the max number of layers)
-    private double[][] valuesErr;
+    private double[][] nodeError;
 
     private ActivationFunction hiddenActivation;
     private ActivationFunction outputActivation;
@@ -33,7 +33,9 @@ public class FeedForward_NN {
     private CostFunction costFunction;
 
     private double learningRate;
-    private double regularization;
+
+    // L2 regularization parameter lambda
+    private double lambda;
 
     // ADAM parameters
     private double beta1; // First moment decay
@@ -65,14 +67,14 @@ public class FeedForward_NN {
         vB = new double[dimensions.length - 1][];
         
 
-        valuesErr = new double [dimensions.length - 1][];
+        nodeError = new double [dimensions.length - 1][];
         for (int i = 0; i < dimensions.length - 1; i++) {
             biases[i] = new double[dimensions[i + 1]];
             gradientB[i] = new double[dimensions[i + 1]];
             mB[i] = new double[dimensions[i + 1]];
             vB[i] = new double[dimensions[i + 1]];
 
-            valuesErr[i] = new double[dimensions[i + 1]];
+            nodeError[i] = new double[dimensions[i + 1]];
         }
 
         // Initialize weights array dimensions
@@ -100,7 +102,7 @@ public class FeedForward_NN {
         this.outputActivation = outputActivation;
 
         this.learningRate = learningRate;
-        this.regularization = regularization;
+        this.lambda = regularization;
 
         this.beta1 = beta1;
         this.beta2 = beta2;
@@ -118,7 +120,7 @@ public class FeedForward_NN {
              settings.getHiddenActivation(),
              settings.getOutputActivation(),
              settings.getLearningRate(),
-             settings.getRegularization(),
+             settings.getLambda(),
              settings.getBeta1(),
              settings.getBeta2());
     }
@@ -182,44 +184,45 @@ public class FeedForward_NN {
         int finalLayer = outputs.length - 1;
         double[] outputActivationDerivative = outputActivation.dfArray(values[finalLayer]);
         for (int node = 0; node < outputs[finalLayer].length; node++) {
-            valuesErr[finalLayer - 1][node] = outputActivationDerivative[node] * costFunction.dcost(expectedOutputs[node], outputs[finalLayer][node]);
+            double costFunctionDerivative = costFunction.dcost(expectedOutputs[node], outputs[finalLayer][node]);
+            nodeError[finalLayer - 1][node] = outputActivationDerivative[node] * costFunctionDerivative;
         }
 
         // Hidden layers
         for (int startLayer = finalLayer - 1; startLayer >= 1; startLayer--) {
             int endLayer = startLayer + 1;
 
-            double[] activationDerivative = hiddenActivation.dfArray(values[startLayer]);
+            double[] hiddenActivationDerivative = hiddenActivation.dfArray(values[startLayer]);
 
-            for (int startNode = 0; startNode < values[startLayer].length; startNode++) {
-                for (int endNode = 0; endNode < values[endLayer].length; endNode++) {
-                    valuesErr[startLayer - 1][startNode] += weights[startLayer][startNode][endNode] * valuesErr[endLayer - 1][endNode];
+            for (int startNode = 0; startNode < outputs[startLayer].length; startNode++) {
+                for (int endNode = 0; endNode < outputs[endLayer].length; endNode++) {
+                    nodeError[startLayer - 1][startNode] += weights[startLayer][startNode][endNode] * nodeError[endLayer - 1][endNode];
 
                     // Update weights
-                    double d = valuesErr[endLayer - 1][endNode] * outputs[startLayer][startNode];
+                    double d = nodeError[endLayer - 1][endNode] * outputs[startLayer][startNode];
                     gradientW[startLayer][startNode][endNode] += d;
                 }
-                valuesErr[startLayer - 1][startNode] *= activationDerivative[startNode];
+                nodeError[startLayer - 1][startNode] *= hiddenActivationDerivative[startNode];
             }
 
             // Update biases
-            for (int endNode = 0; endNode < values[endLayer].length; endNode++) {
-                gradientB[endLayer - 1][endNode] += valuesErr[endLayer - 1][endNode];
+            for (int endNode = 0; endNode < outputs[endLayer].length; endNode++) {
+                gradientB[endLayer - 1][endNode] += nodeError[endLayer - 1][endNode];
             }
         }
 
         // Input layer
-        for (int startNode = 0; startNode < values[0].length; startNode++) {
-            for (int endNode = 0; endNode < values[1].length; endNode++) {
+        for (int startNode = 0; startNode < outputs[0].length; startNode++) {
+            for (int endNode = 0; endNode < outputs[1].length; endNode++) {
                 // Update weights
-                double d = valuesErr[0][endNode] * outputs[0][startNode];
+                double d = nodeError[0][endNode] * outputs[0][startNode];
                 gradientW[0][startNode][endNode] += d;
             }
         }
 
         // Update biases
-        for (int endNode = 0; endNode < values[1].length; endNode++) {
-            gradientB[0][endNode] += valuesErr[0][endNode];
+        for (int endNode = 0; endNode < outputs[1].length; endNode++) {
+            gradientB[0][endNode] += nodeError[0][endNode];
         }
     }
 
@@ -234,9 +237,9 @@ public class FeedForward_NN {
 
     // Called before backpropagation
     public void resetError() {
-        for (int i = 0; i < valuesErr.length; i++) {
-            for (int j = 0; j < valuesErr[i].length; j++) {
-                valuesErr[i][j] = 0;
+        for (int i = 0; i < nodeError.length; i++) {
+            for (int j = 0; j < nodeError[i].length; j++) {
+                nodeError[i][j] = 0;
             }
         }
     }
@@ -245,10 +248,8 @@ public class FeedForward_NN {
     public void updateWeightsAndBiases(int numBatches, int batchSize, int epoch) {
 
         // Adjust learning rate
-        double alpha = learningRate / Math.sqrt(epoch);
-
-        // Weight decay to keep from large weight values
-        double weightDecay = 1 - regularization * alpha;
+        //double alpha = learningRate / Math.sqrt(epoch);
+        double alpha = learningRate;
         
         // Adam updates
         for (int i = 0; i < weights.length; i++) {
@@ -265,7 +266,7 @@ public class FeedForward_NN {
                     double vW_hat = vW[i][j][k] / (1 - Math.pow(beta2, numBatches));
     
                     // Update weights
-                    weights[i][j][k] = weights[i][j][k] * weightDecay - alpha * mW_hat / (Math.sqrt(vW_hat) + epsilon);
+                    weights[i][j][k] = weights[i][j][k] - alpha * (mW_hat / (Math.sqrt(vW_hat) + epsilon) + lambda * weights[i][j][k]);
     
                     // Reset gradient
                     gradientW[i][j][k] = 0;
@@ -297,52 +298,19 @@ public class FeedForward_NN {
 
     // Get current cost of model, given a set of expected outputs
     public double getCost(double[] expectedOutputs) {
-        return costFunction.cost(expectedOutputs, outputs[outputs.length - 1]);
-    }
+        // Cost function
+        double originalCost = costFunction.cost(expectedOutputs, outputs[outputs.length - 1]);
 
-    @Override
-    public String toString() {
-        String returnString = "";
-        String format = "%.4g";
-
-        // Outputs
-        returnString += "outputs=[";
-        for (int i = 0; i < outputs.length; i++) {
-            returnString += "[";
-            for (int j = 0; j < outputs[i].length; j++) {
-                returnString += String.format(format, outputs[i][j]) + ",";
-            }
-            returnString += "\b],";
-        }
-        returnString += "\b]\n";
-
-        // Weights
-        returnString += "weights=[";
+        // L2 Regularization
+        double weightCost = 0;
         for (int i = 0; i < weights.length; i++) {
-            returnString += "[";
             for (int j = 0; j < weights[i].length; j++) {
-                returnString += "[";
                 for (int k = 0; k < weights[i][j].length; k++) {
-                    returnString += String.format(format, weights[i][j][k]) + ",";
+                    weightCost += lambda * weights[i][j][k] * weights[i][j][k] / 2;
                 }
-                returnString += "\b],";
             }
-            returnString += "\b],";
         }
-        returnString += "\b]\n";
 
-        // Biases
-        returnString += "biases=[";
-        for (int i = 0; i < biases.length; i++) {
-            returnString += "[";
-            for (int j = 0; j < biases[i].length; j++) {
-                returnString += String.format(format, biases[i][j]) + ",";
-            }
-            returnString += "\b],";
-        }
-        returnString += "\b]\n";
-
-        
-        return returnString;
+        return originalCost + weightCost;
     }
 }

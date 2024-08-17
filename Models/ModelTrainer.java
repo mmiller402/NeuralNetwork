@@ -50,6 +50,7 @@ public class ModelTrainer {
 
             // Create mini batches with data
             miniBatches = createMiniBatches(trainData, batchSize, true);
+
             int numBatches = miniBatches.length;
 
             for (int batch = 0; batch < numBatches; batch++) {
@@ -59,11 +60,13 @@ public class ModelTrainer {
                 int numCorrect = 0;
 
                 for (int pointIndex = 0; pointIndex < batchSize; pointIndex++) {
+
                     DataPoint point = miniBatches[batch][pointIndex];
 
                     // Process data point if applicable
-                    if (processFunction != null)
+                    if (processFunction != null) {
                         processFunction.apply(point);
+                    }
                     
                     // Forward and back propagate data
                     double[] expectedOutputs = point.getOutputs();
@@ -82,6 +85,7 @@ public class ModelTrainer {
                     }
                     if (realLabel == guessedLabel)
                         numCorrect++;
+                        
                 }
 
                 // Average cost of this batch
@@ -105,7 +109,7 @@ public class ModelTrainer {
                 if (graph != null) {
                     graph.addPoint(epoch * batchSize + batch, averageCost);
                 }
-
+                
                 int numUpdates = epoch * batchSize + batch + 1;
                 model.updateWeightsAndBiases(numUpdates, batchSize, epoch + 1);
             }

@@ -1,5 +1,6 @@
 package CostFunctions;
 
+/*
 public class CrossEntropy extends CostFunction {
 
     // Small value to avoid NaN issues
@@ -28,5 +29,31 @@ public class CrossEntropy extends CostFunction {
     // Calculate the derivative of the cost function
     public double dcost(double expected, double calculated) {
         return calculated - expected;
+    }
+}
+*/
+
+public class CrossEntropy extends CostFunction {
+    public double cost(double[] expectedOutputs, double[] calculatedOutputs) {
+        
+        double cost = 0;
+        for (int i = 0; i < calculatedOutputs.length; i++)
+        {
+            double x = calculatedOutputs[i];
+            double y = expectedOutputs[i];
+            double v = (y == 1) ? -Math.log(x) : -Math.log(1 - x);
+            cost += Double.isInfinite(v) ? 0 : v;
+        }
+        return cost;
+    }
+
+    public double dcost(double expected, double calculated) {
+        double x = calculated;
+        double y = expected;
+        if (x == 0 || x == 1)
+        {
+            return 0;
+        }
+        return (-x + y) / (x * (x - 1));
     }
 }

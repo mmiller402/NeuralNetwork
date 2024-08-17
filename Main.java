@@ -45,7 +45,7 @@ public class Main {
 
         // Train network
         int batchSize = 100;
-        int numIterations = 10;
+        int numIterations = 4;
         trainer.train(trainData, batchSize, numIterations);
 
         // Test network
@@ -110,9 +110,9 @@ public class Main {
         FeedForward_Settings settings = new FeedForward_Settings();
         settings.setDimensions(new int[] {784, 200, 10});
         settings.setCostFunction(new CrossEntropy());
-        settings.setActivations(new Tanh(), new Softmax());
-        settings.setLearningRate(0.001);
-        settings.setRegularization(0.01);
+        settings.setActivations(new LeakyReLU(), new Softmax());
+        settings.setLearningRate(0.0005);
+        settings.setLambda(0.01);
         settings.setBeta(0.9, 0.999);
 
         FeedForward_NN model = new FeedForward_NN(settings);
