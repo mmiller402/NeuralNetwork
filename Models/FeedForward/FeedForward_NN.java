@@ -264,9 +264,13 @@ public class FeedForward_NN {
     public void updateWeightsAndBiases(int numBatches, int batchSize, int epoch) {
 
         // Adjust learning rate
-        //double alpha = learningRate / Math.sqrt(epoch);
+        //double alpha = learningRate * Math.exp(-0.001 * epoch);
         double alpha = learningRate;
         
+        // Ensure gradients are not too large
+        double gradientThreshold = 5.0;
+        clipGradients(gradientW, gradientThreshold);
+
         // Adam updates
         for (int i = 0; i < weights.length; i++) {
             for (int j = 0; j < weights[i].length; j++) {
@@ -312,6 +316,18 @@ public class FeedForward_NN {
         }
     }
 
+    private void clipGradients(double[][][] gradients, double threshold) {
+        for (int i = 0; i < gradients.length; i++) {
+            for (int j = 0; j < gradients[i].length; j++) {
+                for (int k = 0; k < gradients[i][j].length; k++) {
+                    if (Math.abs(gradients[i][j][k]) > threshold) {
+                        gradients[i][j][k] = Math.signum(gradients[i][j][k]) * threshold;
+                    }
+                }
+            }
+        }
+    }
+
     // Get current cost of model, given a set of expected outputs
     public double getCost(double[] expectedOutputs) {
         // Cost function
@@ -327,6 +343,100 @@ public class FeedForward_NN {
             }
         }
 
-        return originalCost + weightCost;
+        //return originalCost + weightCost;
+        return originalCost;
+    }
+
+    // Getters and setters
+    public double[][] getValues() {
+        return values;
+    }
+
+    public double[][] getOutputs() {
+        return outputs;
+    }
+
+    public double[][] getBiases() {
+        return biases;
+    }
+
+    public double[][][] getWeights() {
+        return weights;
+    }
+
+    public ActivationFunction getHiddenActivation() {
+        return hiddenActivation;
+    }
+
+    public void setHiddenActivation(ActivationFunction hiddenActivation) {
+        this.hiddenActivation = hiddenActivation;
+    }
+
+    public ActivationFunction getOutputActivation() {
+        return outputActivation;
+    }
+
+    public void setOutputActivation(ActivationFunction outputActivation) {
+        this.outputActivation = outputActivation;
+    }
+
+    public CostFunction getCostFunction() {
+        return costFunction;
+    }
+
+    public void setCostFunction(CostFunction costFunction) {
+        this.costFunction = costFunction;
+    }
+
+    public double getLearningRate() {
+        return learningRate;
+    }
+
+    public void setLearningRate(double learningRate) {
+        this.learningRate = learningRate;
+    }
+
+    public double getLambda() {
+        return lambda;
+    }
+
+    public void setLambda(double lambda) {
+        this.lambda = lambda;
+    }
+
+    public double getDropoutRate() {
+        return dropoutRate;
+    }
+
+    public void setDropoutRate(double dropoutRate) {
+        this.dropoutRate = dropoutRate;
+    }
+
+    public double getBeta1() {
+        return beta1;
+    }
+
+    public void setBeta1(double beta1) {
+        this.beta1 = beta1;
+    }
+
+    public double getBeta2() {
+        return beta2;
+    }
+
+    public void setBeta2(double beta2) {
+        this.beta2 = beta2;
+    }
+
+    public double getEpsilon() {
+        return epsilon;
+    }
+
+    public Random getRnd() {
+        return rnd;
+    }
+
+    public void setRnd(Random rnd) {
+        this.rnd = rnd;
     }
 }

@@ -45,8 +45,9 @@ public class Main {
 
         // Train network
         int batchSize = 100;
-        int numIterations = 2;
-        trainer.train(trainData, batchSize, numIterations);
+        int numIterations = 20;
+        double testSplitRatio = 0.05;
+        trainer.train(trainData, batchSize, numIterations, testSplitRatio);
 
         // Test network
         int numCorrect = 0;
@@ -107,12 +108,12 @@ public class Main {
 
     public static FeedForward_NN createModel() {
 
-        int[] dimensions = new int[] {784, 200, 50, 10};
+        int[] dimensions = new int[] {784, 100, 10};
         CostFunction costFunction = new CrossEntropy();
         ActivationFunction hiddenActivation = new LeakyReLU();
         ActivationFunction outputActivation = new Softmax();
-        double learningRate = 0.001;
-        double lambda = 0.01;
+        double learningRate = 0.0001;
+        double lambda = 0.1;
         double dropoutRate = 0.2;
         double beta1 = 0.9;
         double beta2 = 0.999;
