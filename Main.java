@@ -32,20 +32,19 @@ public class Main {
             return null;
         };
         //ModelTrainer trainer = new ModelTrainer(model, processFunction, false);
-        ModelTrainer trainer = new ModelTrainer(model, null, false);
+        ModelTrainer trainer = new ModelTrainer(model, null, true);
 
         // Add graph to JFrame
-        /* 
         JFrame frame = createFrame();
         TrainingGraph graph = trainer.getGraph();
 
         frame.add(graph);
         frame.setVisible(true);
-        */
+        
 
         // Train network
-        int batchSize = 100;
-        int numIterations = 20;
+        int batchSize = 32;
+        int numIterations = 100;
         double testSplitRatio = 0.05;
         trainer.train(trainData, batchSize, numIterations, testSplitRatio);
 
@@ -112,8 +111,8 @@ public class Main {
         CostFunction costFunction = new CrossEntropy();
         ActivationFunction hiddenActivation = new LeakyReLU();
         ActivationFunction outputActivation = new Softmax();
-        double learningRate = 0.0001;
-        double lambda = 0.1;
+        double learningRate = 0.00001;
+        double lambda = 0.15;
         double dropoutRate = 0.2;
         double beta1 = 0.9;
         double beta2 = 0.999;
