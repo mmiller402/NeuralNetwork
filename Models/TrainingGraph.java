@@ -334,7 +334,7 @@ public class TrainingGraph extends JPanel {
         int numYLabels = (int) (maxHeight / labelInterval);
         double verticalScale = (double) (height - 2 * MARGIN) / maxHeight;
 
-        for (int i = 0; i < numYLabels; i++) {
+        for (int i = 0; i <= numYLabels; i++) {
             double y = yStart + height - MARGIN - i * verticalScale * labelInterval;
             graph.drawLine((int) xOffset - TICK_LENGTH / 2, (int) y, (int) xOffset + TICK_LENGTH / 2, (int) y);
             String text = Double.toString(i * labelInterval);

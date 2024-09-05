@@ -9,6 +9,7 @@ import Data.ImageDataPoint;
 import Data.ImageReader;
 import Data.MNIST.*;
 import Models.ModelTrainer;
+import Models.NeuralNetwork;
 import Models.TrainingGraph;
 import Models.FeedForward.FeedForward_NN;
 import Models.FeedForward.FeedForward_Settings;
@@ -18,7 +19,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
 
         // Create new model
-        FeedForward_NN model = createModel();
+        NeuralNetwork model = new NeuralNetwork(new int[] {784, 512, 10}, new LeakyReLU(), new Softmax(), new CrossEntropy(), 0.0001, 0.9, 0.999, 0.2);
 
         // Read train and test data
         ImageReader reader = new ImageReader();
@@ -26,13 +27,12 @@ public class Main {
         ImageDataPoint[] testData = reader.readData("Data\\MNIST\\ByteData\\t10k-images.idx3-ubyte", "Data\\MNIST\\ByteData\\t10k-labels.idx1-ubyte", 10);
 
         // Create model trainer
-        
         Function<DataPoint, Void> processFunction = p -> {
             ((ImageDataPoint)p).transformDrawingRandom();
             return null;
         };
-        //ModelTrainer trainer = new ModelTrainer(model, processFunction, false);
-        ModelTrainer trainer = new ModelTrainer(model, null, true);
+        ModelTrainer trainer = new ModelTrainer(model, processFunction, true);
+        //ModelTrainer trainer = new ModelTrainer(model, null, true);
 
         // Add graph to JFrame
         JFrame frame = createFrame();
@@ -43,7 +43,7 @@ public class Main {
         
 
         // Train network
-        int batchSize = 32;
+        int batchSize = 50;
         int numIterations = 100;
         double testSplitRatio = 0.05;
         trainer.train(trainData, batchSize, numIterations, testSplitRatio);
@@ -73,24 +73,12 @@ public class Main {
 
         System.out.println("Test data results: " + numCorrect + " correct out of " + testData.length + " | " + ((double)numCorrect / testData.length * 100) + "%");
         
-        /*
-        JFrame frame = createFrame();
+        
+        JFrame frame2 = createFrame();
         MnistDrawer drawer = new MnistDrawer(model);
 
-        frame.add(drawer);
-        frame.setVisible(true);
-        
-
-        /*
-        MnistReader reader = new MnistReader();
-        MnistDataPoint[] trainData = reader.readData("MNIST\\ByteData\\train-images.idx3-ubyte", "MNIST\\ByteData\\train-labels.idx1-ubyte");
-
-        JFrame frame = createFrame();
-        MnistVisualizer visualizer = new MnistVisualizer();
-        visualizer.setDataPoint(trainData[463]);
-        frame.add(visualizer);
-        frame.setVisible(true);
-        */
+        frame2.add(drawer);
+        frame2.setVisible(true);
     }
 
     public static JFrame createFrame() {

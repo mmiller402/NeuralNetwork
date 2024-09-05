@@ -10,7 +10,7 @@ import java.util.Collections;
 
 public class ModelTrainer {
     
-    private FeedForward_NN model;
+    private NeuralNetwork model;
     private Function<DataPoint, Void> processFunction;
     private TrainingGraph graph;
 
@@ -18,7 +18,7 @@ public class ModelTrainer {
     private int patience = 5; // Number of epochs to wait before early stopping
 
     // Constructor
-    public ModelTrainer(FeedForward_NN model, Function<DataPoint, Void> processFunction, boolean generateGraph) {
+    public ModelTrainer(NeuralNetwork model, Function<DataPoint, Void> processFunction, boolean generateGraph) {
         this.model = model;
         this.processFunction = processFunction;
         
@@ -82,10 +82,10 @@ public class ModelTrainer {
                     // Forward and back propagate data
                     double[] expectedOutputs = point.getOutputs();
                     double[] outputs = model.forwardPropagate(point.getInputs(), true);
-                    model.backPropagate(expectedOutputs);
+                    model.backPropagate(point.getInputs(), expectedOutputs);
 
                     // Update cost
-                    trainCost += model.getCost(point.getOutputs());
+                    trainCost += model.getCost(point.getOutputs(), outputs);
 
                     // Update accuracy
                     int guessedLabel = getLabel(outputs);
@@ -96,12 +96,12 @@ public class ModelTrainer {
                 }
 
                 // Update weights and biases
-                int numUpdates = epoch * batchSize + batch + 1;
-                model.updateWeightsAndBiases(numUpdates, batchSize, epoch + 1);
+                int numUpdates = epoch * numBatches + batch + 1;
+                model.updateWeightsAndBiases(batchSize, numUpdates);
             }
 
             // Learning rate decay
-            model.setLearningRate(model.getLearningRate() * learningRateDecay);
+            //model.setLearningRate(model.getLearningRate() * learningRateDecay);
 
             // Train statistics
             int numDataPoints = numBatches * batchSize;
@@ -175,7 +175,7 @@ public class ModelTrainer {
         for (DataPoint point : testData) {
             double[] expectedOutputs = point.getOutputs();
             double[] outputs = model.forwardPropagate(point.getInputs(), false);
-            totalCost += model.getCost(expectedOutputs);
+            totalCost += model.getCost(expectedOutputs, outputs);
 
             int guessedLabel = getLabel(outputs);
             int realLabel = getLabel(expectedOutputs);
@@ -202,11 +202,11 @@ public class ModelTrainer {
     }
 
     // Getters and setters
-    public FeedForward_NN getModel() {
+    public NeuralNetwork getModel() {
         return model;
     }
 
-    public void setModel(FeedForward_NN model) {
+    public void setModel(NeuralNetwork model) {
         this.model = model;
     }
 

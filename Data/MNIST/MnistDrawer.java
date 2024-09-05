@@ -6,6 +6,7 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.*;
 
+import Models.NeuralNetwork;
 import Models.FeedForward.FeedForward_NN;
 
 import java.util.Timer;
@@ -21,9 +22,9 @@ public class MnistDrawer extends JPanel {
     private Timer timer;
     private TimerTask task;
 
-    private FeedForward_NN model;
+    private NeuralNetwork model;
 
-    public MnistDrawer(FeedForward_NN model) {
+    public MnistDrawer(NeuralNetwork model) {
         this.model = model;
 
         // Initialize pixel array
