@@ -7,7 +7,6 @@ import java.awt.event.MouseEvent;
 import javax.swing.*;
 
 import Models.NeuralNetwork;
-import Models.FeedForward.FeedForward_NN;
 
 import java.util.Timer;
 import java.util.TimerTask;

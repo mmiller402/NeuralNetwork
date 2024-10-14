@@ -1,6 +1,8 @@
 package ActivationFunctions;
 
-public class ActivationFunction {
+import java.io.Serializable;
+
+public class ActivationFunction implements Serializable {
     public double f(double x) {
         return x;
     }

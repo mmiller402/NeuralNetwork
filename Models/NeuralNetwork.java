@@ -1,9 +1,15 @@
 package Models;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import ActivationFunctions.ActivationFunction;
 import CostFunctions.CostFunction;
 
-public class NeuralNetwork {
+public class NeuralNetwork implements Serializable {
     
     // Layers in the network
     // TODO Add functionality for different layer types

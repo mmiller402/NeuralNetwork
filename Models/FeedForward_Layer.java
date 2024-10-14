@@ -1,11 +1,12 @@
 package Models;
 
+import java.io.Serializable;
 import java.util.Random;
 
 import ActivationFunctions.ActivationFunction;
 import CostFunctions.CostFunction;
 
-public class FeedForward_Layer {
+public class FeedForward_Layer implements Serializable {
     
     // values is before activations, outputs is after
     private double[] values;

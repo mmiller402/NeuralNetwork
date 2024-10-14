@@ -2,7 +2,6 @@ package Models;
 
 import java.util.function.Function;
 import Data.DataPoint;
-import Models.FeedForward.FeedForward_NN;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -136,6 +135,12 @@ public class ModelTrainer {
 
         // Return training data
         return trainingData;
+    }
+
+    // Learning rate scheduling
+    private double expLearningRateDecay(int epoch, double initialLearningRate) {
+        double k = 0.1;
+        return initialLearningRate * Math.exp(-k * epoch);
     }
 
     // Create mini batches from given data

@@ -6,9 +6,9 @@ import ActivationFunctions.*;
 import CostFunctions.*;
 import Data.DataPoint;
 import Data.ImageDataPoint;
-import Data.ImageReader;
 import Data.MNIST.*;
 import Models.ModelTrainer;
+import Models.NetworkSaver;
 import Models.NeuralNetwork;
 import Models.TrainingGraph;
 import Models.FeedForward.FeedForward_NN;
@@ -18,6 +18,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
+        /*
         // Create new model
         NeuralNetwork model = new NeuralNetwork(new int[] {784, 512, 10}, new LeakyReLU(), new Softmax(), new CrossEntropy(), 0.0001, 0.9, 0.999, 0.2);
 
@@ -72,8 +73,13 @@ public class Main {
         }
 
         System.out.println("Test data results: " + numCorrect + " correct out of " + testData.length + " | " + ((double)numCorrect / testData.length * 100) + "%");
-        
-        
+        */
+
+        // Save network
+        String filename = "mnistNetwork.ser";
+        //NetworkSaver.saveNetwork(model, filename);
+        NeuralNetwork model = NetworkSaver.loadNetwork(filename);
+
         JFrame frame2 = createFrame();
         MnistDrawer drawer = new MnistDrawer(model);
 
