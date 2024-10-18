@@ -1,53 +1,64 @@
 package Data.QuickDraw;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import Data.ImageDataPoint;
 
 public class QuickDrawReader {
 
-    public ImageDataPoint[] readData(String imageFilePath, String labelFilePath, int numCategories) throws IOException {
+    public static void unpackDrawing(InputStream inputStream) throws IOException {
+        DataInputStream dataInputStream = new DataInputStream(inputStream);
 
-        // Images
-        DataInputStream imageInputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(imageFilePath)));
-        int imageMagicNumber = imageInputStream.readInt();
-        int numberOfImages = imageInputStream.readInt();
-        int nRows = imageInputStream.readInt();
-        int nCols = imageInputStream.readInt();
+        long keyId = dataInputStream.readLong();
+        System.out.println("keyId: " + keyId);
 
-        System.out.println("image magic number is " + imageMagicNumber);
-        System.out.println("number of images is " + numberOfImages);
-        System.out.println("number of rows is: " + nRows);
-        System.out.println("number of cols is: " + nCols);
+        byte[] countryCodeBytes = new byte[2];
+        dataInputStream.readFully(countryCodeBytes);
+        String countryCode = new String(countryCodeBytes, "UTF-8");
+        System.out.println("CountryCode: " + countryCode);
 
-        // Labels
-        DataInputStream labelInputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(labelFilePath)));
-        int labelMagicNumber = labelInputStream.readInt();
-        int numberOfLabels = labelInputStream.readInt();
+        byte recognized = dataInputStream.readByte();
+        System.out.println("Recognized: " + recognized);
 
-        System.out.println("label magic number is " + labelMagicNumber);
-        System.out.println("number of labels is " + numberOfLabels);
+        int timestamp = dataInputStream.readInt();
+        System.out.println("Timestamp: " + timestamp);
 
-        // Store data in dataPoints[]
-        ImageDataPoint[] dataPoints = new ImageDataPoint[numberOfImages];
+        int nStrokes = dataInputStream.readUnsignedShort();
+        System.out.println("NStrokes: " + nStrokes);
 
-        for (int i = 0; i < numberOfImages; i++) {
-            ImageDataPoint point = new ImageDataPoint(nCols, nRows, numCategories);
+        List<int[]> image = new ArrayList<>();
 
-            int label = labelInputStream.readUnsignedByte();
-            point.setOutput(label, 1);
+        for (int i = 0; i < nStrokes; i++) {
+            int nPoints = dataInputStream.readUnsignedShort();
+            int[] x = new int[nPoints];
+            int[] y = new int[nPoints];
 
-            // Data is expected to be ints between 0 and 255 and is stored in doubles between 0 and 1
-            for (int j = 0; j < nCols * nRows; j++)
-                point.setInput(j, (double)imageInputStream.readUnsignedByte() / 255);
-            
-            dataPoints[i] = point;
+            for (int j = 0; j < nPoints; j++) {
+                x[j] = dataInputStream.readUnsignedByte();
+            }
+            for (int j = 0; j < nPoints; j++) {
+                y[j] = dataInputStream.readUnsignedByte();
+            }
+
+            image.add(new int[]{x.length, y.length});
         }
+    }
 
-        // Close streams
-        imageInputStream.close();
-        labelInputStream.close();
-
-        return dataPoints;
+    public static void unpackDrawings(String filename) throws IOException {
+        try (FileInputStream fileInputStream = new FileInputStream(filename)) {
+            while (true) {
+                try {
+                    unpackDrawing(fileInputStream);
+                } catch (EOFException e) {
+                    break;
+                }
+            }
+        }
     }
 }

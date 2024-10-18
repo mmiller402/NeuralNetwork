@@ -7,6 +7,7 @@ import CostFunctions.*;
 import Data.DataPoint;
 import Data.ImageDataPoint;
 import Data.MNIST.*;
+import Data.QuickDraw.QuickDrawReader;
 import Models.ModelTrainer;
 import Models.NetworkSaver;
 import Models.NeuralNetwork;
@@ -75,16 +76,27 @@ public class Main {
         System.out.println("Test data results: " + numCorrect + " correct out of " + testData.length + " | " + ((double)numCorrect / testData.length * 100) + "%");
         */
 
+        
         // Save network
         String filename = "mnistNetwork.ser";
         //NetworkSaver.saveNetwork(model, filename);
         NeuralNetwork model = NetworkSaver.loadNetwork(filename);
+
+        MnistReader reader = new MnistReader();
+        ImageDataPoint[] testData = reader.readData("Data\\MNIST\\ByteData\\t10k-images.idx3-ubyte", "Data\\MNIST\\ByteData\\t10k-labels.idx1-ubyte", 10);
+
+        ModelTrainer trainer = new ModelTrainer(model, null, true);
+        double[] costAccuracy = trainer.evaluateModel(testData);
+        System.out.println("Cost: " + costAccuracy[0] + " | Accuracy: " + costAccuracy[1]);
 
         JFrame frame2 = createFrame();
         MnistDrawer drawer = new MnistDrawer(model);
 
         frame2.add(drawer);
         frame2.setVisible(true);
+        
+
+        //QuickDrawReader.unpackDrawings("Data\\QuickDraw\\BinaryData\\full_binary_ant.bin");
     }
 
     public static JFrame createFrame() {
