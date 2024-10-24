@@ -12,7 +12,6 @@ import CostFunctions.CostFunction;
 public class NeuralNetwork implements Serializable {
     
     // Layers in the network
-    // TODO Add functionality for different layer types
     private FeedForward_Layer[] layers;
 
     // Activation and cost functions of the layers

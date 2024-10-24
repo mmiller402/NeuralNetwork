@@ -11,6 +11,7 @@ import Models.NeuralNetwork;
 import java.util.Timer;
 import java.util.TimerTask;
 
+// Class that allows the user to draw and interact with MNIST-trained models
 public class MnistDrawer extends JPanel {
     
     private double brushRadius = 1;
@@ -35,17 +36,15 @@ public class MnistDrawer extends JPanel {
 
             // Start drawing when mouse is pressed
             public void mousePressed(MouseEvent me) {
-                System.out.println("Mouse pressed: " + me);
-                
                 task = new TimerTask() {
                     public void run() {
 
+                        // Get pixel coordinates of pointer
                         PointerInfo info = MouseInfo.getPointerInfo();
                         Point pointOnScreen = info.getLocation();
                         Point jFramePoint = getLocationOnScreen();
                         double x = pointOnScreen.getX() - jFramePoint.getX();
                         double y = pointOnScreen.getY() - jFramePoint.getY();
-                        System.out.println("Running timer task: x " + x + " y " + y);
 
                         int width = getWidth();
                         int height = getHeight();
@@ -54,11 +53,11 @@ public class MnistDrawer extends JPanel {
                         int xMargin = (width - imageSize) / 2;
                         int yMargin = (height - imageSize) / 2;
 
-                        // Left click
+                        // On left click, draw
                         if (me.getButton() == 1) {
                             drawCircle((x - xMargin) / pixelSize, (y - yMargin) / pixelSize, brushRadius);
                         } 
-                        // Right click
+                        // On right click, erase
                         else if (me.getButton() == 3) {
                             eraseCircle((x - xMargin) / pixelSize, (y - yMargin) / pixelSize, brushRadius);
                         }
@@ -76,10 +75,12 @@ public class MnistDrawer extends JPanel {
 
             // Cancel drawing when mouse is released
             public void mouseReleased(MouseEvent me) {
-                System.out.println("Mouse released: " + me);
                 task.cancel();
             }
         });
+
+        // Display instructions in the terminal
+        System.out.println("Left click to draw, right click to erase, middle mouse button to clear screen\nModel prediction strengths for each digit displayed on the left");
     }
 
     protected void paintComponent(Graphics g) {
@@ -144,6 +145,7 @@ public class MnistDrawer extends JPanel {
         
     }
 
+    // Draw circle around center point, filling in pixels on the edge only partly
     private void drawCircle(double centerX, double centerY, double radius) {
 
         // Loop through every pixel value to see whether it is within circle
@@ -184,6 +186,7 @@ public class MnistDrawer extends JPanel {
         }
     }
 
+    // Erase every pixel within the radius of the center
     private void eraseCircle(double centerX, double centerY, double radius) {
         // Loop through every pixel value to see whether it is within circle
         for (int y = 0; y < 28; y++) {

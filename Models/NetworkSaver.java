@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+// Class for saving and loading neural networks
 public class NetworkSaver {
     
-    // Serialize a neural network
+    // Save neural network to a file
     public static void saveNetwork(NeuralNetwork network, String filename) {
-        // Serialize
         try {
             FileOutputStream file = new FileOutputStream(filename);
             ObjectOutputStream out = new ObjectOutputStream(file);
@@ -19,8 +19,6 @@ public class NetworkSaver {
 
             out.close();
             file.close();
-
-            System.out.println("Object has been serialized");
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -28,9 +26,7 @@ public class NetworkSaver {
 
     // Retrieve network from a file
     public static NeuralNetwork loadNetwork(String filename) {
-
         NeuralNetwork network = null;
-
         try {
             FileInputStream file = new FileInputStream(filename);
             ObjectInputStream in = new ObjectInputStream(file);
@@ -39,8 +35,6 @@ public class NetworkSaver {
 
             in.close();
             file.close();
-
-            System.out.println("Object has been deserialized");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

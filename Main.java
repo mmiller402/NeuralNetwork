@@ -4,29 +4,43 @@ import javax.swing.JFrame;
 
 import ActivationFunctions.*;
 import CostFunctions.*;
-import Data.DataPoint;
-import Data.ImageDataPoint;
+import Data.*;
 import Data.MNIST.*;
-import Data.QuickDraw.QuickDrawReader;
-import Models.ModelTrainer;
-import Models.NetworkSaver;
-import Models.NeuralNetwork;
-import Models.TrainingGraph;
-import Models.FeedForward.FeedForward_NN;
-import Models.FeedForward.FeedForward_Settings;
+import Models.*;
 
 public class Main {
-
     public static void main(String[] args) throws IOException {
+        loadAndTestModel();
+    }
 
-        /*
+    // Load a model and test it
+    public static void loadAndTestModel() throws IOException {
+        // Load the model with highest accuracy
+        NeuralNetwork model = NetworkSaver.loadNetwork("mnistNetwork.ser");
+
+        // Read test data
+        ImageDataPoint[] testData = MnistReader.readData("Data\\MNIST\\ByteData\\t10k-images.idx3-ubyte", "Data\\MNIST\\ByteData\\t10k-labels.idx1-ubyte", 10);
+
+        // Create model trainer and test model
+        ModelTrainer trainer = new ModelTrainer(model, null, false);
+        double[] costAccuracy = trainer.evaluateModel(testData);
+        System.out.println("Cost: " + costAccuracy[0] + " | Accuracy: " + costAccuracy[1]);
+
+        // Let the user draw digits to test the model
+        MnistDrawer drawer = new MnistDrawer(model);
+        JFrame drawFrame = createJFrame();
+        drawFrame.add(drawer);
+        drawFrame.setVisible(true);
+    }
+
+    // Create a new model and train it on the MNIST dataset
+    public static void createAndTrainModel() throws IOException {
         // Create new model
         NeuralNetwork model = new NeuralNetwork(new int[] {784, 512, 10}, new LeakyReLU(), new Softmax(), new CrossEntropy(), 0.0001, 0.9, 0.999, 0.2);
 
         // Read train and test data
-        ImageReader reader = new ImageReader();
-        ImageDataPoint[] trainData = reader.readData("Data\\MNIST\\ByteData\\train-images.idx3-ubyte", "Data\\MNIST\\ByteData\\train-labels.idx1-ubyte", 10);
-        ImageDataPoint[] testData = reader.readData("Data\\MNIST\\ByteData\\t10k-images.idx3-ubyte", "Data\\MNIST\\ByteData\\t10k-labels.idx1-ubyte", 10);
+        ImageDataPoint[] trainData = MnistReader.readData("Data\\MNIST\\ByteData\\train-images.idx3-ubyte", "Data\\MNIST\\ByteData\\train-labels.idx1-ubyte", 10);
+        ImageDataPoint[] testData = MnistReader.readData("Data\\MNIST\\ByteData\\t10k-images.idx3-ubyte", "Data\\MNIST\\ByteData\\t10k-labels.idx1-ubyte", 10);
 
         // Create model trainer
         Function<DataPoint, Void> processFunction = p -> {
@@ -34,15 +48,12 @@ public class Main {
             return null;
         };
         ModelTrainer trainer = new ModelTrainer(model, processFunction, true);
-        //ModelTrainer trainer = new ModelTrainer(model, null, true);
-
-        // Add graph to JFrame
-        JFrame frame = createFrame();
         TrainingGraph graph = trainer.getGraph();
 
-        frame.add(graph);
-        frame.setVisible(true);
-        
+        // Create graph JFrame
+        JFrame graphFrame = createJFrame();
+        graphFrame.add(graph);
+        graphFrame.setVisible(true);
 
         // Train network
         int batchSize = 50;
@@ -50,82 +61,30 @@ public class Main {
         double testSplitRatio = 0.05;
         trainer.train(trainData, batchSize, numIterations, testSplitRatio);
 
-        // Test network
-        int numCorrect = 0;
-
-        for (int i = 0; i < testData.length; i++) {
-
-            //testData[i].transformDrawingRandom();
-
-            double[] inputs = testData[i].getInputs();
-            double[] outputs = testData[i].getOutputs();
-
-            double[] calculatedOutputs = model.forwardPropagate(inputs, false);
-
-            int maxIndex = 0;
-            int label = 0;
-            for (int j = 1; j < calculatedOutputs.length; j++) {
-                maxIndex = (calculatedOutputs[j] > calculatedOutputs[maxIndex]) ? j : maxIndex;
-                label = (outputs[j] > outputs[label]) ? j : label;
-            }
-
-            if (maxIndex == label)
-                numCorrect++;
-        }
-
-        System.out.println("Test data results: " + numCorrect + " correct out of " + testData.length + " | " + ((double)numCorrect / testData.length * 100) + "%");
-        */
-
         
-        // Save network
-        String filename = "mnistNetwork.ser";
-        //NetworkSaver.saveNetwork(model, filename);
-        NeuralNetwork model = NetworkSaver.loadNetwork(filename);
-
-        MnistReader reader = new MnistReader();
-        ImageDataPoint[] testData = reader.readData("Data\\MNIST\\ByteData\\t10k-images.idx3-ubyte", "Data\\MNIST\\ByteData\\t10k-labels.idx1-ubyte", 10);
-
-        ModelTrainer trainer = new ModelTrainer(model, null, true);
+        //NeuralNetwork model = NetworkSaver.loadNetwork(filename);
+        
         double[] costAccuracy = trainer.evaluateModel(testData);
         System.out.println("Cost: " + costAccuracy[0] + " | Accuracy: " + costAccuracy[1]);
 
-        JFrame frame2 = createFrame();
+        // Save network
+        String filename = "newMnistNetwork.ser";
+        NetworkSaver.saveNetwork(model, filename);
+
         MnistDrawer drawer = new MnistDrawer(model);
 
-        frame2.add(drawer);
-        frame2.setVisible(true);
-        
-
-        //QuickDrawReader.unpackDrawings("Data\\QuickDraw\\BinaryData\\full_binary_ant.bin");
+        // Create drawing JFrame 
+        JFrame drawFrame = createJFrame();
+        drawFrame.add(drawer);
+        drawFrame.setVisible(true);
     }
 
-    public static JFrame createFrame() {
-
+    // Code for creating a JFrame
+    public static JFrame createJFrame() {
         JFrame frame = new JFrame();
-        // Set size, layout and location for frame.  
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 400);
-        frame.setLocation(200, 200);
-        frame.setVisible(true);
-
+        frame.setSize(600, 600);
+        frame.setLocation(100, 100);
         return frame;
-    }
-
-    public static FeedForward_NN createModel() {
-
-        int[] dimensions = new int[] {784, 100, 10};
-        CostFunction costFunction = new CrossEntropy();
-        ActivationFunction hiddenActivation = new LeakyReLU();
-        ActivationFunction outputActivation = new Softmax();
-        double learningRate = 0.00001;
-        double lambda = 0.15;
-        double dropoutRate = 0.2;
-        double beta1 = 0.9;
-        double beta2 = 0.999;
-
-        FeedForward_NN model = new FeedForward_NN(dimensions, costFunction, hiddenActivation, outputActivation, learningRate, lambda, dropoutRate, beta1, beta2);
-        model.randomizeWeights();
-
-        return model;
     }
 }

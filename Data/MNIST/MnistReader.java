@@ -6,7 +6,8 @@ import Data.ImageDataPoint;
 
 public class MnistReader {
 
-    public ImageDataPoint[] readData(String imageFilePath, String labelFilePath, int numCategories) throws IOException {
+    // Read MNIST data from the ubyte files
+    public static ImageDataPoint[] readData(String imageFilePath, String labelFilePath, int numCategories) throws IOException {
 
         // Images
         DataInputStream imageInputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(imageFilePath)));
