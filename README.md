@@ -2,6 +2,12 @@
 
 A small neural network I coded from scratch in Java!
 
+![MNISTNetworkShowcase](https://github.com/user-attachments/assets/3d6895c7-c1e6-4bf5-83b5-29f81eb36a18)
+
+![MNISTNetworkShowcase2](https://github.com/user-attachments/assets/ac7a8295-527b-44eb-970e-e261eeb4c668)
+
+![ExampleTrainingGraph](https://github.com/user-attachments/assets/2216dcd4-2a8f-41f6-8d44-f285549308b5)
+
 ## Installation
 
 1. Clone this project to your machine by typing the following command into the terminal or command prompt
