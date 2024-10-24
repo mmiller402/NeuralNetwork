@@ -3,7 +3,6 @@ package Models;
 import java.util.function.Function;
 import Data.DataPoint;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -13,7 +12,6 @@ public class ModelTrainer {
     private Function<DataPoint, Void> processFunction;
     private TrainingGraph graph;
 
-    private double learningRateDecay = 0.99; // Learning rate decay factor
     private int patience = 5; // Number of epochs to wait before early stopping
 
     // Constructor
@@ -135,12 +133,6 @@ public class ModelTrainer {
 
         // Return training data
         return trainingData;
-    }
-
-    // Learning rate scheduling
-    private double expLearningRateDecay(int epoch, double initialLearningRate) {
-        double k = 0.1;
-        return initialLearningRate * Math.exp(-k * epoch);
     }
 
     // Create mini batches from given data

@@ -1,10 +1,5 @@
 package Models;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import ActivationFunctions.ActivationFunction;
 import CostFunctions.CostFunction;
@@ -15,7 +10,6 @@ public class NeuralNetwork implements Serializable {
     private FeedForward_Layer[] layers;
 
     // Activation and cost functions of the layers
-    private ActivationFunction hiddenActivation, outputActivation;
     private CostFunction costFunction;
 
     // Learning rate of system
@@ -31,8 +25,6 @@ public class NeuralNetwork implements Serializable {
     // Constructor
     public NeuralNetwork(int[] dim, ActivationFunction hiddenActivation, ActivationFunction outputActivation,
             CostFunction costFunction, double learningRate, double beta1, double beta2, double dropoutRate) {
-        this.hiddenActivation = hiddenActivation;
-        this.outputActivation = outputActivation;
         this.costFunction = costFunction;
         this.learningRate = learningRate;
         this.beta1 = beta1;
