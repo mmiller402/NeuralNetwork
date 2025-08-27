@@ -16,7 +16,7 @@ public class Main {
     // Load a model and test it
     public static void loadAndTestModel() throws IOException {
         // Load the model with highest accuracy
-        NeuralNetwork model = NetworkSaver.loadNetwork("mnistNetwork.ser");
+        NeuralNetwork model = NetworkSaver.loadNetwork("Models\\SavedModels\\mnistNetwork.ser");
 
         // Read test data
         ImageDataPoint[] testData = MnistReader.readData("Data\\MNIST\\ByteData\\t10k-images.idx3-ubyte", "Data\\MNIST\\ByteData\\t10k-labels.idx1-ubyte", 10);
@@ -68,7 +68,7 @@ public class Main {
         System.out.println("Cost: " + costAccuracy[0] + " | Accuracy: " + costAccuracy[1]);
 
         // Save network
-        String filename = "newMnistNetwork.ser";
+        String filename = "newMnistNetworkTest.ser";
         NetworkSaver.saveNetwork(model, filename);
 
         MnistDrawer drawer = new MnistDrawer(model);

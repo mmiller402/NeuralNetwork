@@ -6,6 +6,9 @@ import CostFunctions.CostFunction;
 
 public class NeuralNetwork implements Serializable {
     
+    // Serial ID
+    private static final long serialVersionUID = 6529685098267757691L;
+
     // Layers in the network
     private FeedForward_Layer[] layers;
 

@@ -3,6 +3,10 @@ package ActivationFunctions;
 import java.io.Serializable;
 
 public class ActivationFunction implements Serializable {
+
+    // Serial ID
+    private static final long serialVersionUID = 6529685098267757694L;
+
     public double f(double x) {
         return x;
     }

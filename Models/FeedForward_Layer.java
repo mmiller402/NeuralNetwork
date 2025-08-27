@@ -8,6 +8,9 @@ import CostFunctions.CostFunction;
 
 public class FeedForward_Layer implements Serializable {
     
+    // Serial ID
+    private static final long serialVersionUID = 6529685098267757692L;
+
     // values is before activations, outputs is after
     private double[] values;
     private double[] outputs;

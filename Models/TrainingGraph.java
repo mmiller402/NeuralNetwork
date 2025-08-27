@@ -90,7 +90,7 @@ public class TrainingGraph extends JPanel {
 
     private void drawTicks(Graphics2D graph, int xStart, int yStart, int width, int height, boolean isCost) {
         int numEpochs = trainingData.getNumEpochs();
-        double horizontalScale = (double) (width - 2 * MARGIN) / (numEpochs - 1);
+        double horizontalScale = (numEpochs > 1) ? ((double) (width - 2 * MARGIN) / (numEpochs - 1)) : 0;
 
         // Epoch ticks
         for (int i = 0; i < numEpochs; i++) {
@@ -142,6 +142,10 @@ public class TrainingGraph extends JPanel {
     }
 
     private void drawPlot(Graphics2D graph, List<Double> data, Color color, int xStart, int yStart, int width, int height, double horizontalScale, double verticalScale) {
+        // If no data, don't draw
+        if (data.size() == 0) return;
+        
+        // All points except the last one
         graph.setPaint(color);
         int numEpochs = trainingData.getNumEpochs();
         for (int i = 0; i < numEpochs - 1; i++) {
@@ -152,6 +156,7 @@ public class TrainingGraph extends JPanel {
             graph.fill(new Ellipse2D.Double(x1 - RADIUS, y1 - RADIUS, RADIUS * 2, RADIUS * 2));
             graph.draw(new Line2D.Double(x1, y1, x2, y2));
         }
+
         // Final point
         double x = xStart + MARGIN + (numEpochs - 1) * horizontalScale;
         double y = yStart + height - MARGIN - data.get(numEpochs - 1) * verticalScale;
@@ -217,12 +222,12 @@ public class TrainingGraph extends JPanel {
     private void drawRotatedString(Graphics2D graph, String text, int x, int y, int angle) {
         Font defaultFont = getFont();
         FontMetrics metrics = getFontMetrics(defaultFont);
-        AffineTransform originalTransform = graph.getTransform();
-        AffineTransform transform = new AffineTransform();
+        AffineTransform transform = graph.getTransform();
         transform.rotate(Math.toRadians(angle), x, y);
         graph.setTransform(transform);
         graph.drawString(text, x - metrics.stringWidth(text) / 2, y);
-        graph.setTransform(originalTransform);
+        transform.rotate(Math.toRadians(-angle), x, y);
+        graph.setTransform(transform);
     }
 
     public void setTrainingData(TrainingData trainingData) {
